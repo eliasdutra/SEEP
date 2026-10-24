@@ -3,3 +3,10 @@ __pycache__/
 *.pyc
 data/protection.db
 .DS_Store
+
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3

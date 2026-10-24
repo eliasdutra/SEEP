@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEEP — Simulador Elétrico de Estudos de Proteção</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='vendor/plotly.min.js') }}"></script>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">SE</div>
+      <div><strong>SEEP</strong><span>Simulador Elétrico de Estudos de Proteção</span></div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard"><span>▦</span> Dashboard</button>
+      <button class="nav-btn" data-view="data"><span>≡</span> Modelo físico</button>
+      <button class="nav-btn" data-view="singleline"><span>⌁</span> Unifilar</button>
+      <button class="nav-btn" data-view="powerflow"><span>↯</span> Fluxo de potência</button>
+      <button class="nav-btn" data-view="shortcircuit"><span>ϟ</span> Curto-circuito</button>
+      <button class="nav-btn" data-view="protection"><span>⛨</span> Ajustes 50/51</button>
+      <button class="nav-btn" data-view="tcc"><span>⌁</span> Coordenograma</button>
+      {# A tela "Cálculo 51" (view-manual) está oculta: o passo a passo do
+         estágio inverso virou material de apoio, não faz parte do fluxo de
+         estudo. A rota /api/manual51, a seção view-manual e os testes seguem
+         no lugar — para trazer de volta, basta descomentar este botão. #}
+      {# <button class="nav-btn" data-view="manual"><span>ƒ</span> Cálculo 51</button> #}
+      <button class="nav-btn" data-view="expert"><span>⚙</span> Módulo especialista</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="status-dot"><i></i><span>Caso: 13,8/6,6kV</span></div>
+      <div class="small">IEC 60909 · 60 Hz</div>
+      <div class="small build-tag">{{ build_tag }}</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="page-title">Dashboard</h1>
+        <p id="page-subtitle">Visão geral do estudo de proteção</p>
+      </div>
+      <div class="top-actions">
+        <span class="pill info">Pandapower</span>
+        <button id="recalc-btn" class="btn secondary">Recalcular sistema</button>
+      </div>
+    </header>
+
+    <section id="view-dashboard" class="view active">
+      <div class="hero">
+        <div>
+          <span class="eyebrow">SEEP</span>
+          <h2>SEEP — Simulador Elétrico de Estudos de Proteção</h2>
+          <p>Simulador elétrico em código aberto para estudos de proteção de sobrecorrente, construído em Python com o motor de cálculo Pandapower. Cobre o estudo completo em sequência — modelo físico → fluxo de potência → curto-circuito IEC 60909 → ajustes 50/51 → quatro coordenogramas de coordenação — no caso reduzido 13,8/6,6 kV.</p>
+        </div>
+        <div class="hero-badge"><b>V01</b><span>CACHE ELÉTRICO</span></div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric"><span>Barras</span><strong id="metric-buses">5</strong><small>modelo ativo</small></article>
+        <article class="metric"><span>Geração instalada</span><strong id="metric-gen">41,25</strong><small>MVA</small></article>
+        <article class="metric"><span>Motores</span><strong id="metric-motors">2</strong><small>modelo ativo</small></article>
+        <article class="metric"><span>Transformadores</span><strong id="metric-trafo">1</strong><small id="metric-trafo-sub">T1 11 MVA</small></article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="card-head"><div><h3>Estado do cálculo</h3><p>Se o sistema já foi calculado e qual o resultado mais importante agora.</p></div><span id="solver-status" class="pill warn">Carregando…</span></div>
+          <div id="summary-cards" class="summary-list skeleton"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h3>Como o programa funciona</h3><p>Visão geral, em ordem, sem entrar em termos técnicos.</p></div></div>
+          <div class="flow-diagram">
+            <span>Dados do sistema<br><small>equipamentos e conexões</small></span><b>→</b><span>Cálculo elétrico<br><small>energia e curto-circuito</small></span><b>→</b><span>Ajuste dos relés<br><small>quando cada proteção deve desligar</small></span><b>→</b><span>Gráfico de coordenação<br><small>confere se a ordem de atuação está certa</small></span>
+          </div>
+          <div class="notice"><b>Como funciona o "cache":</b> o cálculo elétrico completo (energia e curto-circuito) só roda de novo quando você muda um equipamento. Ajustar um relé é rápido — só o gráfico daquele ajuste é refeito, não o sistema inteiro.</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-data" class="view">
+      <div class="hero compact">
+        <div><span class="eyebrow">CASO DE ESTUDO CONTROLADO</span><h2>Modelo físico</h2><p>Gerador, transformador, cabos e motores têm seus parâmetros de maior impacto elétrico editáveis abaixo. Barras e proteções seguem somente leitura, pois mudar topologia exigiria remontar o unifilar inteiro.</p></div>
+        <span class="pill info">gerador · trafo · cabos · motores editáveis</span>
+      </div>
+      <div class="toolbar data-tabs">
+        <div>
+          <button class="chip data-tab active" data-section="cables">Cabos</button>
+          <button class="chip data-tab" data-section="motors">Motores</button>
+          <button class="chip data-tab" data-section="generators">Geradores</button>
+          <button class="chip data-tab" data-section="transformers">Transformadores</button>
+          <button class="chip data-tab" data-section="cts">TCs</button>
+          <button class="chip data-tab" data-section="buses">Barras</button>
+          <button class="chip data-tab" data-section="switchgear">Proteções</button>
+        </div>
+      </div>
+      <article class="card data-editor-card">
+        <div class="card-head"><div><h3 id="data-editor-title">Cabos</h3><p id="data-editor-subtitle">Dados físicos usados diretamente na montagem do Pandapower.</p></div><span id="data-editor-badge" class="pill">fixo</span></div>
+        <div id="data-editor" class="data-editor"></div>
+      </article>
+      <div class="notice data-notice"><b>Como funciona a edição:</b> ao salvar um equipamento, o sistema elétrico inteiro é recalculado automaticamente (fluxo, curto MAX/MIN e faltas remotas de motor) — o mesmo processo do botão <b>Recalcular sistema</b>. Equipamentos alterados ganham o selo <b>editado</b>; use <b>Restaurar</b> para voltar ao dado original a qualquer momento. Barras e proteções (topologia) continuam somente leitura para evitar um modelo eletricamente incoerente.</div>
+    </section>
+
+    <section id="view-singleline" class="view">
+      <div class="toolbar">
+        <span class="small">Clique em barras, cabos, motores, relés, disjuntores ou transformadores para ver os dados.</span>
+      </div>
+      <div class="singleline-layout">
+        <article class="card singleline-card"><div id="singleline-svg-wrap"></div></article>
+        <aside class="card detail-panel"><div id="element-detail"><span class="eyebrow">ELEMENTO</span><h3>Selecione no unifilar</h3><p class="muted">Os dados elétricos e ações aparecerão aqui.</p></div></aside>
+      </div>
+    </section>
+
+    <section id="view-powerflow" class="view">
+      <div class="grid two">
+        <article class="card"><div class="card-head"><div><h3>Perfil de tensão</h3><p>Resultado do fluxo de potência.</p></div><span id="pf-source" class="pill">Pandapower</span></div><div id="pf-chart" class="plot"></div></article>
+        <article class="card"><div class="card-head"><div><h3>Geração</h3><p>Potência ativa e reativa resultante.</p></div></div><div id="generator-results" class="summary-list"></div></article>
+      </div>
+      <article class="card table-card"><div class="card-head"><div><h3>Barras</h3><p>Tensão calculada e ângulo.</p></div></div><div class="table-wrap"><table><thead><tr><th>Barra</th><th>kV nominal</th><th>V [pu]</th><th>V [%]</th><th>Ângulo [°]</th></tr></thead><tbody id="pf-table"></tbody></table></div></article>
+    </section>
+
+    <section id="view-shortcircuit" class="view">
+      <div class="toolbar">
+        <div class="segmented"><button class="sc-case active" data-case="max">MAX</button><button class="sc-case" data-case="min">MIN</button></div>
+        <select id="sc-fault"><option value="3f">3F</option><option value="ll">LL</option><option value="lg">LG</option><option value="llg">LLG</option></select>
+        <span id="sc-note" class="small"></span>
+      </div>
+      <div class="grid chart-wide">
+        <article class="card"><div id="sc-chart" class="plot tall"></div></article>
+        <article class="card"><div class="card-head"><div><h3>Leitura rápida</h3><p>Resumo do cálculo selecionado.</p></div></div><div id="sc-kpis" class="summary-list"></div></article>
+      </div>
+      <article class="card table-card"><div class="table-wrap"><table><thead><tr><th>Barra</th><th>3F [kA]</th><th>LL [kA]</th><th>LG [kA]</th><th>LLG [kA]</th></tr></thead><tbody id="sc-table"></tbody></table></div></article>
+    </section>
+
+    <section id="view-protection" class="view">
+      <div class="hero compact">
+        <div><h2>Ajustes 50/51</h2><p>Edite os cinco relés do caso. A tela mostra, ao lado, as correntes de falta calculadas pelo estudo e a atuação resultante. Salvar ajuste redesenha os coordenogramas; não recalcula a rede elétrica.</p></div>
+        <span class="pill info">OC1 · MiCOM P241</span>
+      </div>
+      <div class="protection-layout">
+        <article class="card zone-list-card">
+          <div class="card-head"><div><h3>Relés</h3><p>Relé1 · Relé10 · Relé12 · Relé11 · Relé3</p></div></div>
+          <div id="zone-list" class="zone-list"></div>
+        </article>
+        <article class="card">
+          <div id="protection-editor"><div class="empty-state">Selecione um relé.</div></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-tcc" class="view">
+      <div class="tcc-simple-head">
+        <div>
+          <span class="eyebrow">RESULTADO DA CADEIA DE ESTUDO</span>
+          <h2>Coordenogramas</h2>
+          <p>Quatro vistas fixas montadas com os ajustes salvos e as correntes de curto calculadas pelo estudo. O unifilar da zona fica num painel ao lado do gráfico, sem sobrepor as curvas.</p>
+        </div>
+        <button id="print-btn" class="btn secondary">Imprimir</button>
+      </div>
+
+      <div id="tcc-simple-tabs" class="tcc-simple-tabs" role="tablist" aria-label="Coordenogramas essenciais">
+        <button type="button" class="tcc-simple-tab active" data-tcc-view="mb0">M-B-0 · 6,6 kV</button>
+        <button type="button" class="tcc-simple-tab" data-tcc-view="mb6">M-B-6 · 13,8 kV</button>
+        <button type="button" class="tcc-simple-tab" data-tcc-view="t1">T1 · Trafo</button>
+        <button type="button" class="tcc-simple-tab" data-tcc-view="general">Geral</button>
+      </div>
+
+      <article class="card tcc-simple-card">
+        <div class="card-head tcc-simple-card-head">
+          <div>
+            <span class="eyebrow" id="tcc-zone-id">M-B-0</span>
+            <h3 id="tcc-title">M-B-0 · 6,6 kV</h3>
+            <p id="tcc-subtitle">DJ2 → T1 → DJ1</p>
+          </div>
+          <span class="pill info" id="tcc-base-pill">base 6,6 kV</span>
+        </div>
+        <div class="tcc-sheet-tools">
+          <label>Folha
+            <select id="tcc-theme">
+              <option value="etap" selected>Folha branca (padrão)</option>
+              <option value="dark">Escura (tela)</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="tcc-grid"> grade interna</label>
+          <label class="check" id="tcc-singleline-toggle"><input type="checkbox" id="tcc-singleline" checked> unifilar ao lado</label>
+          <button type="button" id="tcc-png" class="btn secondary small">Exportar PNG</button>
+        </div>
+        <div class="tcc-work">
+          <div class="tcc-sheet-col">
+            <div class="tcc-plot-row">
+              <div id="tcc-chart" class="plot tcc-plot tcc-simple-plot"></div>
+              <div id="tcc-singleline-panel" class="tcc-singleline-panel"></div>
+            </div>
+            <div id="tcc-stamp" class="tcc-stamp-wrap"></div>
+          </div>
+          <aside id="tcc-live" class="tcc-live"></aside>
+        </div>
+        <div id="tcc-concise-summary" class="tcc-concise-summary"></div>
+      </article>
+
+    </section>
+
+    <section id="view-manual" class="view">
+      <div class="hero compact">
+        <div><span class="eyebrow">ENTENDA O CÁLCULO</span><h2>Cálculo manual da função 51</h2><p>Escolha uma zona e uma corrente. O programa mostra TC, corrente secundária, pickup, múltiplo M e o tempo do estágio inverso IEC ou IEEE. O múltiplo é o mesmo no primário e no secundário quando tudo é referido ao mesmo TC.</p></div>
+        <span class="pill info">didático</span>
+      </div>
+      <div class="toolbar manual-toolbar">
+        <label>Zona <select id="manual-zone"></select></label>
+        <label>Corrente primária [A] <input id="manual-current" type="number" step="1" placeholder="automático"></label>
+        <button id="manual-calc" class="btn primary">Calcular</button>
+      </div>
+      <div class="grid two manual-grid">
+        <article class="card">
+          <div class="card-head"><div><h3>Passo a passo</h3><p>Da corrente primária até o tempo de atuação.</p></div><span id="manual-curve-pill" class="pill info">IEC</span></div>
+          <div id="manual-steps" class="manual-steps"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h3>Seis curvas</h3><p>IEC SI/VI/EI e IEEE MI/VI/EI para comparação matemática.</p></div></div>
+          <div id="manual-compare" class="plot tall"></div>
+        </article>
+      </div>
+      <article class="card table-card">
+        <div class="card-head"><div><h3>Verificações da zona</h3><p>O Pandapower fornece as correntes de falta para estas verificações, mas elas não são desenhadas no TCC.</p></div></div>
+        <div id="manual-checks" class="manual-checks"></div>
+      </article>
+    </section>
+
+    <section id="view-expert" class="view">
+      <div class="hero compact">
+        <div><span class="eyebrow">SISTEMA ESPECIALISTA</span><h2>Verificação de coordenação (fase)</h2><p>Confere, como um engenheiro confere: se os relés do caminho estão seletivos entre si e se a curva fica dentro da banda do motor — acima da partida e abaixo do dano. Curvas de partida, dano e inrush são referência fixa, nunca objeto de ajuste. A sugestão de pickup/TMS/50 continua disponível, como ação sobre o relé reprovado.</p></div>
+        <span class="pill warn">fase apenas</span>
+      </div>
+      <div class="toolbar">
+        <label>Caminho de coordenação <select id="expert-path"></select></label>
+        <button id="expert-refresh" class="btn secondary">Recalcular</button>
+        <label class="check"><input type="checkbox" id="expert-showall"> ver todas as zonas de uma vez</label>
+      </div>
+      <div id="review-cases" class="review-cases"></div>
+      <div id="expert-stepper" class="expert-stepper"></div>
+      <div id="expert-list" class="expert-list skeleton"></div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

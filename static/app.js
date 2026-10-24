@@ -9,8 +9,36 @@ async function api(url,opts={}){const r=await fetch(url,opts);let j={};try{j=awa
 
 const viewMeta={
  dashboard:['Dashboard','Caso: 13,8/6,6kV — visão geral'],data:['Modelo físico','Dados do caso atual — somente leitura'],singleline:['Unifilar','Topologia reduzida usada no Pandapower'],powerflow:['Fluxo de potência','Resultados calculados pelo Pandapower'],shortcircuit:['Curto-circuito','IEC 60909 — MAX e MIN'],protection:['Ajustes 50/51','OC1 editável + correntes calculadas pelo estudo'],tcc:['Coordenogramas','Quatro vistas montadas após fluxo, curto e ajustes'],manual:['Cálculo 51','Seis curvas, TC, múltiplo M e tempo de atuação'],expert:['Módulo especialista','Verificação de coordenação e banda do motor']};
+// Navegação móvel: abre um painel lateral sem reduzir o unifilar.
+const mobileNavToggle=$('#mobile-nav-toggle');
+const mobileNavClose=$('#mobile-nav-close');
+const mobileNavBackdrop=$('#mobile-nav-backdrop');
+const sidebar=$('#site-sidebar');
+function setMobileNavOpen(open){
+ const visible=Boolean(open)&&window.innerWidth<=720;
+ sidebar?.classList.toggle('mobile-open',visible);
+ mobileNavBackdrop?.classList.toggle('is-open',visible);
+ mobileNavToggle?.setAttribute('aria-expanded',String(visible));
+ mobileNavToggle?.setAttribute('aria-label',visible?'Fechar menu':'Abrir menu');
+ document.body.classList.toggle('mobile-nav-open',visible);
+}
+if(mobileNavToggle)mobileNavToggle.addEventListener('click',()=>setMobileNavOpen(!sidebar?.classList.contains('mobile-open')));
+if(mobileNavClose)mobileNavClose.addEventListener('click',()=>setMobileNavOpen(false));
+if(mobileNavBackdrop)mobileNavBackdrop.addEventListener('click',()=>setMobileNavOpen(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setMobileNavOpen(false)});
+let mobileResizeTimer;
+window.addEventListener('resize',()=>{
+ if(window.innerWidth>720)setMobileNavOpen(false);
+ clearTimeout(mobileResizeTimer);
+ mobileResizeTimer=setTimeout(()=>{
+  if(typeof Plotly==='undefined'||!Plotly.Plots?.resize)return;
+  document.querySelectorAll('.view.active .js-plotly-plot').forEach(el=>{
+   try{Plotly.Plots.resize(el)}catch(err){console.warn('Redimensionamento do gráfico',err)}
+  });
+ },180);
+});
 $$('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.view));
-function showView(v){$$('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$$('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${v}`));$('#page-title').textContent=viewMeta[v][0];$('#page-subtitle').textContent=viewMeta[v][1];if(v==='data')renderDataViewer();if(v==='singleline')renderSingleLine();if(v==='powerflow')loadPF();if(v==='shortcircuit')loadSC(state.scCase);if(v==='protection')loadZones();if(v==='tcc')loadTCC();if(v==='manual')loadManual();if(v==='expert')loadExpert()}
+function showView(v){setMobileNavOpen(false);$$('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===v));$$('.view').forEach(x=>x.classList.toggle('active',x.id===`view-${v}`));$('#page-title').textContent=viewMeta[v][0];$('#page-subtitle').textContent=viewMeta[v][1];if(v==='data')renderDataViewer();if(v==='singleline')renderSingleLine();if(v==='powerflow')loadPF();if(v==='shortcircuit')loadSC(state.scCase);if(v==='protection')loadZones();if(v==='tcc')loadTCC();if(v==='manual')loadManual();if(v==='expert')loadExpert()}
 // Curto novo invalida tudo que foi derivado dele: as tabelas de
 // fluxo e de curto, os dados do especialista, a verificação em
 // cascata e a última folha de coordenograma desenhada. Guardar

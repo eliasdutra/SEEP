@@ -167,3 +167,100 @@ body{overflow:hidden}#app{display:grid;grid-template-columns:238px 1fr;height:10
 .review-line.ok .review-num b{color:#71e4bb}
 .review-notes{margin-top:14px;display:grid;gap:5px}
 .review-notes span{color:var(--muted);font-size:10.5px;line-height:1.5}
+
+
+/* SEEP MOBILE 2026-10-24
+   Somente para telas pequenas: evita menu espremido, mantém SVG legível
+   e reorganiza cartões. As regras de desktop e impressão permanecem intactas. */
+.mobile-nav-toggle,.mobile-nav-close,.mobile-nav-backdrop,.mobile-singleline-hint{display:none}
+@media screen and (max-width:720px){
+  html,body{width:100%;max-width:100%;overflow:hidden}
+  #app{display:block;width:100%;height:100vh;height:100dvh;overflow:hidden}
+  .main{width:100%;height:100%;min-width:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .sidebar{position:fixed;top:0;bottom:0;left:0;z-index:52;
+    width:min(84vw,320px);height:100vh;height:100dvh;
+    padding:20px 14px;overflow-x:hidden;overflow-y:auto;
+    transform:translateX(-105%);transition:transform .22s ease;
+    box-shadow:8px 0 24px rgba(0,0,0,.28)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar .brand{padding-right:35px;flex-shrink:0}
+  .sidebar .brand>div:last-child{flex:1;min-width:0;font-size:initial}
+  .sidebar .brand strong{font-size:15px}
+  .sidebar .brand span{font-size:11px;overflow-wrap:anywhere}
+  .sidebar nav .nav-btn,.sidebar nav .nav-btn:not(.active){font-size:14px;
+    width:100%;min-height:44px;justify-content:flex-start;text-align:left}
+  .sidebar nav .nav-btn span{font-size:18px;flex:0 0 23px}
+  .sidebar-bottom{display:block}
+  .mobile-nav-toggle,.mobile-nav-close{display:inline-flex;align-items:center;justify-content:center;
+    background:#13263a;color:var(--text);border:1px solid #37516a;border-radius:10px;
+    width:40px;height:40px;min-width:40px;cursor:pointer;font-size:22px}
+  .mobile-nav-close{position:absolute;top:20px;right:14px;width:32px;height:32px;
+    min-width:32px;font-size:18px}
+  .mobile-nav-backdrop.is-open{display:block;position:fixed;inset:0;z-index:51;
+    border:0;background:rgba(0,0,0,.66);cursor:pointer}
+  body.mobile-nav-open .main{overflow:hidden}
+  .topbar{padding:12px;gap:8px;flex-wrap:wrap;align-items:center}
+  .topbar-title{flex:1;min-width:0}
+  .topbar h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar p{font-size:11px;line-height:1.35}
+  .top-actions{width:100%;justify-content:flex-end;flex-wrap:wrap}
+  .top-actions .pill{display:none}
+  .top-actions .btn{min-height:38px;font-size:12px}
+  .view{padding:12px 12px 30px;min-width:0}
+  .hero,.hero.compact{padding:16px;flex-direction:column;align-items:stretch;gap:12px}
+  .hero h2{font-size:21px;line-height:1.25}
+  .hero p{font-size:12px}
+  .hero-badge{width:96px;height:76px;border-radius:14px}
+  .hero-badge b{font-size:28px}
+  .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+  .metric{min-width:0;padding:12px}
+  .metric strong{font-size:22px;overflow-wrap:anywhere}
+  .metric span{font-size:10px}
+  .grid.two,.grid.three,.grid.chart-wide,.singleline-layout,.protection-layout,.tcc-layout{
+    grid-template-columns:minmax(0,1fr)}
+  .card{min-width:0;padding:12px}
+  .card-head,.editor-head{flex-wrap:wrap}
+  .toolbar,.toolbar>div{flex-wrap:wrap}
+  .data-tabs{top:94px}
+  .data-tabs>div{max-width:100%;overflow-x:auto}
+  .flow-diagram{justify-content:flex-start;overflow-x:auto;min-width:0;min-height:90px;
+    padding:4px 0 12px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+  .flow-diagram span{flex:0 0 136px;padding:10px}
+  .flow-diagram b{flex:0 0 auto}
+  .summary-row{gap:9px;align-items:flex-start}
+  .summary-row span{min-width:0;overflow-wrap:anywhere}
+  .summary-row b{text-align:right;overflow-wrap:anywhere}
+  .mobile-singleline-hint{display:block;margin:2px 0 8px;color:var(--muted);font-size:12px}
+  .singleline-card{overflow-x:auto;overflow-y:hidden;max-width:100%;
+    overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+  #singleline-svg-wrap{width:max-content;min-width:100%}
+  #singleline-svg-wrap svg{width:900px;min-width:900px;max-width:none;height:auto}
+  .detail-panel{min-height:0}
+  .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tcc-simple-head{flex-wrap:wrap;align-items:flex-start}
+  .tcc-simple-head h2{font-size:21px}
+  .tcc-work{display:block;width:100%;min-width:0}
+  .tcc-sheet-col{width:100%;max-width:100%;min-width:0;flex:none}
+  .tcc-plot-row{display:flex;flex-direction:column;width:100%;max-width:100%;gap:10px}
+  .tcc-plot-row .tcc-simple-plot{width:100%;min-width:0;height:420px;min-height:380px;flex:none}
+  .tcc-singleline-panel{width:100%;max-width:100%;min-height:160px;flex:none}
+  .tcc-singleline-panel svg{max-height:230px}
+  .tcc-live{width:100%;min-width:0;margin-top:12px}
+  .tcc-simple-card{padding:12px;min-width:0}
+  .tcc-sheet-tools{flex-wrap:wrap}
+  .tcc-summary-item{grid-template-columns:minmax(0,1fr) auto}
+  .tcc-summary-item strong{white-space:normal;text-align:right}
+  .plot,.tcc-plot,.tcc-simple-plot{max-width:100%}
+  .review-line{grid-template-columns:minmax(0,1fr)}
+  .review-num{text-align:left;white-space:normal}
+  #toast{left:12px;right:12px;bottom:12px;font-size:12px}
+}
+@media screen and (max-width:380px){
+ .topbar p{font-size:10px}
+ .metric strong{font-size:19px}
+ .metric{padding:10px}
+ .tcc-live .pair{grid-template-columns:1fr}
+}
+@media screen and (prefers-reduced-motion:reduce){
+ .sidebar{transition:none}
+}

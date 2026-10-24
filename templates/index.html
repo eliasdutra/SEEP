@@ -9,7 +9,9 @@
 </head>
 <body>
 <div id="app">
-  <aside class="sidebar">
+  <button type="button" id="mobile-nav-backdrop" class="mobile-nav-backdrop" aria-label="Fechar menu" tabindex="-1"></button>
+  <aside class="sidebar" id="site-sidebar">
+    <button type="button" id="mobile-nav-close" class="mobile-nav-close" aria-label="Fechar menu">✕</button>
     <div class="brand">
       <div class="brand-mark">SE</div>
       <div><strong>SEEP</strong><span>Simulador Elétrico de Estudos de Proteção</span></div>
@@ -38,7 +40,8 @@
 
   <main class="main">
     <header class="topbar">
-      <div>
+      <button type="button" id="mobile-nav-toggle" class="mobile-nav-toggle" aria-label="Abrir menu" aria-controls="site-sidebar" aria-expanded="false">☰</button>
+      <div class="topbar-title">
         <h1 id="page-title">Dashboard</h1>
         <p id="page-subtitle">Visão geral do estudo de proteção</p>
       </div>
@@ -107,6 +110,7 @@
       <div class="toolbar">
         <span class="small">Clique em barras, cabos, motores, relés, disjuntores ou transformadores para ver os dados.</span>
       </div>
+      <p class="mobile-singleline-hint">← Deslize o diagrama para ver os outros equipamentos →</p>
       <div class="singleline-layout">
         <article class="card singleline-card"><div id="singleline-svg-wrap"></div></article>
         <aside class="card detail-panel"><div id="element-detail"><span class="eyebrow">ELEMENTO</span><h3>Selecione no unifilar</h3><p class="muted">Os dados elétricos e ações aparecerão aqui.</p></div></aside>
